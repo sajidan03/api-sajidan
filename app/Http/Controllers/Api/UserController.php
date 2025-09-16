@@ -92,6 +92,24 @@ class UserController extends Controller
     public function update(Request $request, string $id)
     {
         //
+        $user = User::find($id);
+        $validator = Validator::make($request->all(), [
+            'name' => 'sometimes|required|string|max:255',
+            'email' => 'sometimes|required|string|email|max:255|unique:users,email,' . $id,
+            'password' => 'sometimes|required|string|min:8',
+        ]);
+        if ($user) {
+            $user->update(
+                [
+                    'name' => $request->name ?? $user->name,
+                    'email' => $request->email ?? $user->email,
+                    'password' => $request->password ? bcrypt($request->password) : $user->password,
+                ]
+            );
+            return response()->json(['message' => 'User updated successfully', 'user' => $user], 200);
+        }else {
+            return response()->json(['message' => 'User not found'], 404);
+        }
     }
 
     /**
@@ -99,6 +117,12 @@ class UserController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $user = User::find($id);
+        if ($user) {
+            $user->delete();
+            return response()->json(['message' => 'User deleted successfully'], 200);
+        } else {
+            return response()->json(['message' => 'User not found'], 404);
+        }
     }
 }
