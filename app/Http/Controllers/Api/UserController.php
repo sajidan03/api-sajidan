@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
@@ -24,7 +25,32 @@ class UserController extends Controller
             return response()->json(['message' => 'No users found'], 404);
         }
     }
+    public function login(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|string|email',
+            'password' => 'required|string',
+        ]);
 
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 400);
+        }
+
+        if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
+            $user = Auth::user();
+
+            $token = $user->createToken('authToken')->plainTextToken;
+
+            return response()->json([
+                'message' => 'Login successful',
+                'user' => $user,
+                'access_token' => $token,
+                'token_type' => 'Bearer'
+            ], 200);
+        } else {
+            return response()->json(['message' => 'Invalid credentials'], 401);
+        }
+    }
     /**
      * Store a newly created resource in storage.
      */
@@ -45,7 +71,7 @@ class UserController extends Controller
         ]);
         return response()->json(['message' => 'User created successfully', 'user' => $user], 200);
     }
-    
+
     /**
      * Display the specified resource.
      */
